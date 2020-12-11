@@ -60,7 +60,7 @@ private:
     vector<byte> generateGaloisField(int size);
     vector<byte> prepareArray(vector<byte> array, int amOfCorrectionBytes);
     vector<vector<byte>> createCorrectionBytes(vector<vector<byte>> dataBlocks, int version);
-    vector<byte> mergeBlocksAndCorrections(vector<vector<byte>> blocks, vector<vector<byte>> corrections)
+    vector<byte> mergeBlocksAndCorrections(vector<vector<byte>> blocks, vector<vector<byte>> corrections);
 };
 
 

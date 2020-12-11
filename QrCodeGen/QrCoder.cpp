@@ -35,7 +35,27 @@ string QrCoder::generate() {
 
 vector<::byte> QrCoder::mergeBlocksAndCorrections(vector<vector<byte>> blocks, vector<vector<byte>> corrections) {
     vector<::byte> mergedBlocks;
+    while (!blocks.empty()) {
+        for (int i = 0; i < blocks.size(); i++) {
+            if (blocks[i].empty()) {
+                blocks.erase(blocks.begin() + i);
+                continue;
+            }
+            mergedBlocks.push_back(blocks[i][0]);
+            blocks[i].erase(blocks[i].begin());
+        }
+    }
 
+    while (!corrections.empty()) {
+        for (int i = 0; i < corrections.size(); i++) {
+            if (corrections[i].empty()) {
+                corrections.erase(corrections.begin() + i);
+                continue;
+            }
+            mergedBlocks.push_back(corrections[i][0]);
+            corrections[i].erase(corrections[i].begin());
+        }
+    }
     return mergedBlocks;
 }
 
