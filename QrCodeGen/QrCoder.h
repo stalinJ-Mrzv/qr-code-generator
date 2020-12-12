@@ -19,8 +19,7 @@ public:
     QrCoder();
     QrCoder(string sourceText);
 
-    string generate();
-    string generateStrToBits();
+    vector<vector<int>> generate();
 
     void setSourceText(string sourceText);
     string getSourceText();
@@ -30,7 +29,7 @@ public:
 
     void setCodeType(char codeType);
     char getCodeType();
-
+    vector<vector<int>> generateAllAlignmentCoords(int version, vector<int> alignments);
 private:
     ConstantsForQr consts;
 
@@ -42,6 +41,7 @@ private:
 
     string sourceText;
     string byteEncode(string str);
+    string generateStrToBits();
 
     vector<int> getVersionSizes();
     string getCodeTypeInBits();
@@ -61,6 +61,14 @@ private:
     vector<byte> prepareArray(vector<byte> array, int amOfCorrectionBytes);
     vector<vector<byte>> createCorrectionBytes(vector<vector<byte>> dataBlocks, int version);
     vector<byte> mergeBlocksAndCorrections(vector<vector<byte>> blocks, vector<vector<byte>> corrections);
+
+    vector<vector<int>> createQrCode(int version);
+    vector<vector<int>> fillSearchPatterns(vector<vector<int>> qrcode);
+    vector<vector<int>> drawRect(vector<vector<int>> qrcode, int x_start, int y_start, int x_end, int y_end);
+    vector<vector<int>> fillAlignPatterns(vector<vector<int>> qrcode, vector<vector<int>> alignmentCoords);
+    vector<vector<int>> fillSynchLines(vector<vector<int>> qrcode);
+    vector<vector<int>> fillVersionCode(vector<vector<int>> qrcode, int version);
+    vector<vector<int>> fillMaskCode(vector<vector<int>> qrcode);
 };
 
 
