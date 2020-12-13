@@ -39,7 +39,7 @@ private:
     ConstantsForQr consts;
 
     ErrorCorrection errorCorrection;
-    int correctionLevel = ErrorCorrection::correctionLevels::H;
+    int correctionLevel = ErrorCorrection::correctionLevels::L;
 
     Encoder encoder;
     int codeType = Encoder::codeTypes::B;
