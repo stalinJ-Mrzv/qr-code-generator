@@ -9,3 +9,12 @@ string Encoder::byteEncode(string sourceStr) {
     }
     return res;
 }
+
+string Encoder::byteStreamToBitStream(arrayUInt byteStream) {
+    string bitStream = "";
+    for (uint byte : byteStream) {
+        bitset<8> bs(byte);
+        bitStream += bs.to_string();
+    }
+    return bitStream;
+}

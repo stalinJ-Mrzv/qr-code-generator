@@ -17,7 +17,8 @@ matrixUInt ContentFiller::fillContent(uint version, arrayUInt data, int correcti
         qrcode = this->fillVersionCode(qrcode, version);
     }
     qrcode = this->fillMaskAndCorrectionLevelCode(qrcode, correctionLevel);
-    matrixUInt filledQrCode = this->fillData(qrcode, data);
+    matrixUInt filledQrCode = this->fillData(qrcode, data, version);
+    filledQrCode = this->addIndent(filledQrCode);
     return filledQrCode;
 }
 
@@ -158,8 +159,98 @@ matrixInt ContentFiller::fillMaskAndCorrectionLevelCode(matrixInt qrcode, int co
     return qrcode;
 }
 
-matrixUInt ContentFiller::fillData(matrixInt qrcode, arrayUInt data) {
-    matrixUInt filledQrCode(qrcode.size(), arrayUInt(qrcode[0].size()));
+bool ContentFiller::isReserved(int element) {
+    return element != -1;
+}
 
+bool ContentFiller::isNeedToReverse(uint row, uint col, uint size) {
+    if (col >= size - 7 && row < 9) {
+        return true;
+    }
+    if (row > size - 1) {
+        return true;
+    }
+    return false;
+}
+
+matrixUInt ContentFiller::fillData(matrixInt qrcode, arrayUInt data, uint version) {
+    string bitData = this->encoder.byteStreamToBitStream(data);
+    uint size = qrcode.size();
+    Point origin(size - 1, size - 1);
+    Direction direction = Direction::UpFirstCol;
+    uint moduleIndex = 0;
+    while (true) {
+        if (origin.x == 6) {
+            origin.x--;
+        }
+
+        if (!isReserved(qrcode[origin.y][origin.x])) {
+            if (moduleIndex > bitData.length()) {
+                break;
+            }
+            qrcode[origin.y][origin.x] = bitData[moduleIndex++] == '1' ? 1 : 0;
+            if (((origin.y + origin.x) % 2) == 0) {
+                qrcode[origin.y][origin.x] = !qrcode[origin.y][origin.x];
+            }
+        }
+
+        switch (direction) {
+            case UpFirstCol:
+                origin.x--;
+                direction = Direction::UpSecondCol;
+                break;
+
+            case UpSecondCol:
+                origin.x++;
+                origin.y--;
+                direction = Direction::UpFirstCol;
+
+                if (isNeedToReverse(origin.y, origin.x, size)) {
+                    origin.x -= 2;
+                    origin.y++;
+                    direction = Direction::DownFirstCol;
+                }
+                break;
+
+            case DownFirstCol:
+                origin.x--;
+                direction = Direction::DownSecondCol;
+                break;
+
+            case DownSecondCol:
+                direction = Direction::DownFirstCol;
+                origin.x++;
+                origin.y++;
+
+                if (isNeedToReverse(origin.y, origin.x, size)) {
+                    origin.y--;
+                    origin.x -= 2;
+                    direction = Direction::UpFirstCol;
+                }
+                break;
+        }
+    }
+    matrixUInt filledQrCode(size, arrayUInt(size));
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            if (qrcode[i][j] == -1) {
+                qrcode[i][j] = 0;
+            }
+            filledQrCode[i][j] = qrcode[i][j];
+        }
+    }
     return filledQrCode;
+}
+
+matrixUInt ContentFiller::addIndent(matrixUInt qrcode) {
+    matrixUInt qrCodeWithIndent(qrcode.size() + (4 * 2), arrayUInt(qrcode.size() + (4 * 2), 0));
+
+    for (int i = 4; i < qrCodeWithIndent.size() - 4; i++) {
+        for (int j = 4; j < qrCodeWithIndent[0].size() - 4; j++) {
+            qrCodeWithIndent[i][j] = qrcode[i - 4][j - 4];
+        }
+    }
+
+    cout << qrCodeWithIndent.size() << endl;
+    return qrCodeWithIndent;
 }

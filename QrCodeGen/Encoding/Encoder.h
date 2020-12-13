@@ -2,6 +2,8 @@
 #define QRCODEGEN_ENCODER_H
 
 #include <iostream>
+#include <bitset>
+
 #include "../Types.h"
 
 using namespace std;
@@ -17,6 +19,7 @@ public:
     };
 
     string byteEncode(string str);
+    string byteStreamToBitStream(arrayUInt byteStream);
 };
 
 
