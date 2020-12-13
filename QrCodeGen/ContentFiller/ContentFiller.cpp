@@ -1,0 +1,165 @@
+#include "ContentFiller.h"
+
+matrixUInt ContentFiller::fillContent(uint version, arrayUInt data, int correctionLevel) {
+    uint size = 21;
+    arrayUInt alignments = this->consts.alignPatterns[version];
+    if (version >= 1) {
+        size = alignments[alignments.size() - 1] + 7;
+    }
+    matrixInt qrcode(size, arrayInt(size, -1));
+    qrcode = this->fillSearchPatterns(qrcode);
+    matrixUInt alignmentCoords = this->generateAllAlignmentCoords(version, alignments);
+    if (version >= 1) {
+        qrcode = this->fillAlignPatterns(qrcode, alignmentCoords);
+    }
+    qrcode = this->fillSynchLines(qrcode);
+    if (version >= 6) {
+        qrcode = this->fillVersionCode(qrcode, version);
+    }
+    qrcode = this->fillMaskAndCorrectionLevelCode(qrcode, correctionLevel);
+    matrixUInt filledQrCode = this->fillData(qrcode, data);
+    return filledQrCode;
+}
+
+matrixInt ContentFiller::drawRect(matrixInt qrcode, uint x_start, uint y_start, uint x_end, uint y_end, int value) {
+    for (int i = x_start; i <= x_end; i++) {
+        qrcode[y_start][i] = value;
+        qrcode[y_end][i] = value;
+    }
+
+    for (int i = y_start; i <= y_end; i++) {
+        qrcode[i][x_start] = value;
+        qrcode[i][x_end] = value;
+    }
+
+    return qrcode;
+}
+
+matrixInt ContentFiller::fillSearchPatterns(matrixInt qrcode) {
+    // left top
+    qrcode = this->drawRect(qrcode, 0, 0, 6, 6, 1);
+    qrcode = this->drawRect(qrcode, 2, 2, 4, 4, 1);
+    qrcode = this->drawRect(qrcode, 3, 3, 3, 3, 1);
+    qrcode = this->drawRect(qrcode, 1, 1, 5, 5, 0);
+    qrcode = this->drawRect(qrcode, 0, 7, 7, 7, 0);
+    qrcode = this->drawRect(qrcode, 7, 0, 7, 7, 0);
+
+    // left bottom
+    qrcode = this->drawRect(qrcode, 0, qrcode.size() - 7, 6, qrcode.size() - 1, 1);
+    qrcode = this->drawRect(qrcode, 2, qrcode.size() - 5, 4, qrcode.size() - 3, 1);
+    qrcode = this->drawRect(qrcode, 3, qrcode.size() - 4, 3, 3, 1);
+    qrcode = this->drawRect(qrcode, 1, qrcode.size() - 6, 5, qrcode.size() - 2, 0);
+    qrcode = this->drawRect(qrcode, 0, qrcode.size() - 8, 7, qrcode.size() - 8, 0);
+    qrcode = this->drawRect(qrcode, 7, qrcode.size() - 8, 7, qrcode.size() - 1, 0);
+
+    // right top
+    qrcode = this->drawRect(qrcode, qrcode.size() - 7, 0, qrcode.size() - 1, 6, 1);
+    qrcode = this->drawRect(qrcode, qrcode.size() - 5, 2, qrcode.size() - 3, 4, 1);
+    qrcode = this->drawRect(qrcode, qrcode.size() - 4, 3, 3, 3, 1);
+    qrcode = this->drawRect(qrcode, qrcode.size() - 6, 1, qrcode.size() - 2, 5, 0);
+    qrcode = this->drawRect(qrcode, qrcode.size() - 8, 0, qrcode.size() - 8, 7, 0);
+    qrcode = this->drawRect(qrcode, qrcode.size() - 8, 7, qrcode.size() - 1, 7, 0);
+
+    return qrcode;
+}
+
+matrixUInt ContentFiller::generateAllAlignmentCoords(uint version, arrayUInt alignments) {
+    matrixUInt alignmentCoords;
+    arrayUInt tempCoords(2);
+    for (int coord1: alignments) {
+        tempCoords[0] = coord1;
+        for (int coord2: alignments) {
+            tempCoords[1] = coord2;
+            alignmentCoords.push_back(tempCoords);
+        }
+    }
+    if (version > 5) {
+        for (int i = 0; i < alignmentCoords.size(); i++) {
+            if ((alignmentCoords[i][0] == alignments[0] & alignmentCoords[i][1] == alignments[0]) ||
+                (alignmentCoords[i][0] == alignments[0] & alignmentCoords[i][1] == alignments[alignments.size() - 1]) ||
+                (alignmentCoords[i][0] == alignments[alignments.size() - 1] & alignmentCoords[i][1] == alignments[0])) {
+                alignmentCoords.erase(alignmentCoords.begin() + i);
+            }
+        }
+    }
+    return alignmentCoords;
+}
+
+matrixInt ContentFiller::fillAlignPatterns(matrixInt qrcode, matrixUInt alignmentCoords) {
+    for (arrayUInt coord: alignmentCoords) {
+        qrcode = this->drawRect(qrcode, coord[0], coord[1], coord[0], coord[1], 1);
+        qrcode = this->drawRect(qrcode, coord[0] - 2, coord[1] - 2, coord[0] + 2, coord[1] + 2, 1);
+        qrcode = this->drawRect(qrcode, coord[0] - 1, coord[1] - 1, coord[0] + 1, coord[1] + 1, 0);
+    }
+
+    return qrcode;
+}
+
+matrixInt ContentFiller::fillSynchLines(matrixInt qrcode) {
+    uint coord1 = 6;
+    uint coord2 = 8;
+    uint cell = 1;
+    while (coord2 <= qrcode.size() - 9) {
+        qrcode[coord1][coord2] = cell;
+        qrcode[coord2][coord1] = cell;
+        cell = !cell;
+        coord2++;
+    }
+    return qrcode;
+}
+
+matrixInt ContentFiller::fillVersionCode(matrixInt qrcode, uint version) {
+    matrixUInt codeVersion = this->consts.versionCodes[version];
+    uint start_pos = qrcode.size() - 11;
+    uint m = 0;
+    for (int i = start_pos; i < start_pos + 3; i++) {
+        for (int j = 0; j < codeVersion[0].size(); j++) {
+            qrcode[i][j] = codeVersion[m][j];
+            qrcode[j][i] = codeVersion[m][j];
+        }
+        m++;
+    }
+    return qrcode;
+}
+
+matrixInt ContentFiller::fillMaskAndCorrectionLevelCode(matrixInt qrcode, int correctionLevel) {
+    arrayUInt maskAndCorrectionLevelCode = this->consts.maskCodesByCorrectionLevel[correctionLevel];
+    int m = 0;
+    for (int i = 0; i < 6; i++) {
+        qrcode[8][i] = maskAndCorrectionLevelCode[m];
+        m++;
+    }
+
+    for (int i = 7; i <= 8; i++) {
+        qrcode[8][i] = maskAndCorrectionLevelCode[m];
+        m++;
+    }
+
+    qrcode[7][8] = maskAndCorrectionLevelCode[m];
+    m++;
+
+    for (int i = 5; i >= 0; i--) {
+        qrcode[i][8] = maskAndCorrectionLevelCode[m];
+        m++;
+    }
+
+    m = 0;
+    for (int i = 0; i < 7; i++) {
+        qrcode[qrcode.size() - 1 - i][8] = maskAndCorrectionLevelCode[m];
+        m++;
+    }
+    qrcode[qrcode.size() - 1 - 7][8] = 1;
+
+    for (int i = 7; i >= 0; i--) {
+        qrcode[8][qrcode.size() - 1 - i] = maskAndCorrectionLevelCode[m];
+        m++;
+    }
+
+    return qrcode;
+}
+
+matrixUInt ContentFiller::fillData(matrixInt qrcode, arrayUInt data) {
+    matrixUInt filledQrCode(qrcode.size(), arrayUInt(qrcode[0].size()));
+
+    return filledQrCode;
+}

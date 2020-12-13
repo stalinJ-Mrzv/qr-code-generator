@@ -4,11 +4,15 @@
 #include <iostream>
 #include <vector>
 
+#include "Types.h"
+
 using namespace std;
+using namespace Types;
 
 class ConstantsForQr {
 public:
-    const vector<vector<int>> versionSizesByVersionAndCorrectionLevel = {
+
+    const matrixUInt versionSizesByVersionAndCorrectionLevel = {
         // L
         {152, 272, 440, 640, 864, 1088, 1248, 1552, 1856, 2192,
                 2592, 2960, 3424, 3688, 4184, 4712, 5176, 5768, 6360, 6888,
@@ -34,7 +38,7 @@ public:
                 6344, 6760, 7208, 7688, 7888, 8432, 8768, 9136, 9776, 10208}
     };
 
-    const vector<vector<int>> amountOfBitsByVersionAndCodeType = {
+    const matrixUInt amountOfBitsByVersionAndCodeType = {
         // N
         // 1-9
         {10, 10, 10, 10, 10, 10, 10, 10, 10,
@@ -60,7 +64,7 @@ public:
                 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16},
     };
 
-    const vector<vector<int>> amountOfBlocksByVersionAndCorrectionLevel = {
+    const matrixUInt amountOfBlocksByVersionAndCorrectionLevel = {
         // L
         {1, 1, 1, 1, 1, 2, 2, 2, 2, 4,
         4, 4, 4, 4, 6, 6, 6, 6, 7, 8,
@@ -86,7 +90,7 @@ public:
         51, 54, 57, 60, 63, 66, 70, 74, 77, 81}
     };
 
-    const vector<vector<int>> amountOfCorrectionBytesPerBlock = {
+    const matrixUInt amountOfCorrectionBytesPerBlock = {
         // L
         {7, 10, 15, 20, 26, 18, 20, 24, 30, 18,
         20, 24, 26, 30, 22, 24, 28, 30, 28, 28,
@@ -112,7 +116,7 @@ public:
         30, 30, 30, 30, 30, 30, 30, 30, 30, 30}
     };
 
-    const vector<vector<int>> genPolynoms = {
+    const matrixUInt genPolynoms = {
         {}, // 0
         {}, // 1
         {}, // 2
@@ -146,7 +150,7 @@ public:
         {41, 173, 145, 152, 216, 31, 179, 182, 50, 48, 110, 86, 239, 96, 222, 125, 42, 173, 226, 193, 224, 130, 156, 37, 251, 216, 238, 40, 192, 180}, // 30
     };
 
-    const vector<int> invGaloisField = {
+    const arrayInt invGaloisField = {
         -1, 0, 1, 25, 2, 50, 26, 198, 3, 223, 51, 238, 27, 104, 199, 75,
         4, 100, 224, 14, 52, 141, 239, 129, 28, 193, 105, 248, 200, 8, 76, 113,
         5, 138, 101, 47, 225, 36, 15, 33, 53, 147, 142, 218, 240, 18, 130, 69,
@@ -165,7 +169,7 @@ public:
         79, 174, 213, 233, 230, 231, 173, 232, 116, 214, 244, 234, 168, 80, 88, 175
     };
 
-    const vector<vector<int>> alignPatterns = {
+    const matrixUInt alignPatterns = {
         {},
         {18},
         {22},
@@ -208,7 +212,7 @@ public:
         {6, 30, 58, 86, 114, 142, 170}
     };
 
-    const vector<vector<vector<int>>> versionCodes = {
+    const vector<matrixUInt> versionCodes = {
             {{}},
             {{}},
             {{}},
@@ -251,7 +255,7 @@ public:
             {{1, 1, 1, 0, 0, 1}, {0, 0, 0, 1, 0, 0}, {0, 1, 0, 1, 0, 1}},
     };
 
-    const vector<vector<int>> maskCodesByCorrectionLevel = {
+    const matrixUInt maskCodesByCorrectionLevel = {
             // L
             {1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0},
 

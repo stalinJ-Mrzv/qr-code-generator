@@ -8,67 +8,45 @@
 #include <windows.h>
 
 #include "consts.h"
-
+#include "Encoding/Encoder.h"
+#include "ErrorCorrection/ErrorCorrection.h"
+#include "Types.h"
+#include "Utils/Utils.h"
+#include "ContentFiller/ContentFiller.h"
 
 using namespace std;
+using namespace Types;
 
 class QrCoder {
 public:
-    typedef unsigned char byte;
-
     QrCoder();
     QrCoder(string sourceText);
 
-    vector<vector<int>> generate();
+    matrixUInt generate();
 
     void setSourceText(string sourceText);
     string getSourceText();
 
-    void setCorrectionLevel(char correctionLevel);
-    char getCorrectionLevel();
+    void setCorrectionLevel(int correctionLevel);
+    int getCorrectionLevel();
 
-    void setCodeType(char codeType);
-    char getCodeType();
-    vector<vector<int>> generateAllAlignmentCoords(int version, vector<int> alignments);
+    void setCodeType(int codeType);
+    int getCodeType();
+
 private:
+    string sourceText;
+
     ConstantsForQr consts;
 
-    char correctionLevel = 'H'; // L(7%), M(15%), Q(25%), H(30%)
-    vector<char> correctionLevels = {'L', 'M', 'Q', 'H'};
+    ErrorCorrection errorCorrection;
+    int correctionLevel = ErrorCorrection::correctionLevels::H;
 
-    char codeType = 'B'; // N - numerical, A - alphanumerical, B - bytes
-    vector<char> codeTypes = {'N', 'A', 'B'};
+    Encoder encoder;
+    int codeType = Encoder::codeTypes::B;
 
-    string sourceText;
-    string byteEncode(string str);
-    string generateStrToBits();
+    Utils utils;
 
-    vector<int> getVersionSizes();
-    string getCodeTypeInBits();
-
-    int getIndexOfCorrectionLevel();
-    int getIndexOfCodeType();
-
-    int calcVersion(vector<int> versionSizes, unsigned int length);
-    int getAmOfBitsForLen(int version);
-
-    string getBitsByNumber(unsigned int num, int amOfBits);
-    string extendStringWithZeros(string str);
-    string extendStringWithBytes(string str, unsigned int requiredSize);
-
-    vector<vector<byte>> splitDataOnBlocks(string str, int version);
-    vector<byte> generateGaloisField(int size);
-    vector<byte> prepareArray(vector<byte> array, int amOfCorrectionBytes);
-    vector<vector<byte>> createCorrectionBytes(vector<vector<byte>> dataBlocks, int version);
-    vector<byte> mergeBlocksAndCorrections(vector<vector<byte>> blocks, vector<vector<byte>> corrections);
-
-    vector<vector<int>> createQrCodeBase(int version);
-    vector<vector<int>> fillSearchPatterns(vector<vector<int>> qrcode);
-    vector<vector<int>> drawRect(vector<vector<int>> qrcode, int x_start, int y_start, int x_end, int y_end, int value);
-    vector<vector<int>> fillAlignPatterns(vector<vector<int>> qrcode, vector<vector<int>> alignmentCoords);
-    vector<vector<int>> fillSynchLines(vector<vector<int>> qrcode);
-    vector<vector<int>> fillVersionCode(vector<vector<int>> qrcode, int version);
-    vector<vector<int>> fillMaskAndCorrectionLevelCode(vector<vector<int>> qrcode);
+    ContentFiller contentFiller;
 };
 
 
