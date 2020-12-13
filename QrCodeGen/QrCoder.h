@@ -62,13 +62,13 @@ private:
     vector<vector<byte>> createCorrectionBytes(vector<vector<byte>> dataBlocks, int version);
     vector<byte> mergeBlocksAndCorrections(vector<vector<byte>> blocks, vector<vector<byte>> corrections);
 
-    vector<vector<int>> createQrCode(int version);
+    vector<vector<int>> createQrCodeBase(int version);
     vector<vector<int>> fillSearchPatterns(vector<vector<int>> qrcode);
-    vector<vector<int>> drawRect(vector<vector<int>> qrcode, int x_start, int y_start, int x_end, int y_end);
+    vector<vector<int>> drawRect(vector<vector<int>> qrcode, int x_start, int y_start, int x_end, int y_end, int value);
     vector<vector<int>> fillAlignPatterns(vector<vector<int>> qrcode, vector<vector<int>> alignmentCoords);
     vector<vector<int>> fillSynchLines(vector<vector<int>> qrcode);
     vector<vector<int>> fillVersionCode(vector<vector<int>> qrcode, int version);
-    vector<vector<int>> fillMaskCode(vector<vector<int>> qrcode);
+    vector<vector<int>> fillMaskAndCorrectionLevelCode(vector<vector<int>> qrcode);
 };
 
 

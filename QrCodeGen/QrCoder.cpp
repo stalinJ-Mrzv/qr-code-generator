@@ -31,18 +31,17 @@ vector<vector<int>> QrCoder::generate() {
     vector<vector<byte>> correctionBytes = this->createCorrectionBytes(splittedBlocks, version);
     vector<byte> mergedBlocks = this->mergeBlocksAndCorrections(splittedBlocks, correctionBytes);
 
-    vector<vector<int>> qrcode = this->createQrCode(version);
-
+    vector<vector<int>> qrcode = this->createQrCodeBase(version);
 
     return qrcode;
 }
-vector<vector<int>> QrCoder::createQrCode(int version) {
+vector<vector<int>> QrCoder::createQrCodeBase(int version) {
     int size = 21;
     vector<int> alignments = this->consts.alignPatterns[version];
     if (version >= 1) {
         size = alignments[alignments.size() - 1] + 7;
     }
-    vector<vector<int>> qrcode(size, vector<int>(size, 0));
+    vector<vector<int>> qrcode(size, vector<int>(size, -1));
     qrcode = this->fillSearchPatterns(qrcode);
     vector<vector<int>> alignmentCoords = this->generateAllAlignmentCoords(version, alignments);
     if (version >= 1) {
@@ -52,11 +51,42 @@ vector<vector<int>> QrCoder::createQrCode(int version) {
     if (version >= 6) {
         qrcode = this->fillVersionCode(qrcode, version);
     }
-
+    qrcode = this->fillMaskAndCorrectionLevelCode(qrcode);
     return qrcode;
 }
 
-vector<vector<int>> QrCoder::fillMaskCode(vector<vector<int>> qrcode) {
+vector<vector<int>> QrCoder::fillMaskAndCorrectionLevelCode(vector<vector<int>> qrcode) {
+    vector<int> maskAndCorrectionLevelCode = this->consts.maskCodesByCorrectionLevel[this->getIndexOfCorrectionLevel()];
+    int m = 0;
+    for (int i = 0; i < 6; i++) {
+        qrcode[8][i] = maskAndCorrectionLevelCode[m];
+        m++;
+    }
+
+    for (int i = 7; i <= 8; i++) {
+        qrcode[8][i] = maskAndCorrectionLevelCode[m];
+        m++;
+    }
+
+    qrcode[7][8] = maskAndCorrectionLevelCode[m];
+    m++;
+
+    for (int i = 5; i >= 0; i--) {
+        qrcode[i][8] = maskAndCorrectionLevelCode[m];
+        m++;
+    }
+
+    m = 0;
+    for (int i = 0; i < 7; i++) {
+        qrcode[qrcode.size() - 1 - i][8] = maskAndCorrectionLevelCode[m];
+        m++;
+    }
+    qrcode[qrcode.size() - 1 - 7][8] = 1;
+
+    for (int i = 7; i >= 0; i-- ) {
+        qrcode[8][qrcode.size() - 1 - i] = maskAndCorrectionLevelCode[m];
+        m++;
+    }
 
     return qrcode;
 }
@@ -112,41 +142,52 @@ vector<vector<int>> QrCoder::generateAllAlignmentCoords(int version, vector<int>
 
 vector<vector<int>> QrCoder::fillAlignPatterns(vector<vector<int>> qrcode, vector<vector<int>> alignmentCoords) {
     for (vector<int> coord: alignmentCoords) {
-        qrcode = this->drawRect(qrcode, coord[0], coord[1], coord[0], coord[1]);
-        qrcode = this->drawRect(qrcode, coord[0] - 2, coord[1] - 2, coord[0] + 2, coord[1] + 2);
+        qrcode = this->drawRect(qrcode, coord[0], coord[1], coord[0], coord[1], 1);
+        qrcode = this->drawRect(qrcode, coord[0] - 2, coord[1] - 2, coord[0] + 2, coord[1] + 2, 1);
+        qrcode = this->drawRect(qrcode, coord[0] - 1, coord[1] - 1, coord[0] + 1, coord[1] + 1, 0);
     }
 
     return qrcode;
 }
 
-vector<vector<int>> QrCoder::drawRect(vector<vector<int>> qrcode, int x_start, int y_start, int x_end, int y_end) {
+vector<vector<int>> QrCoder::drawRect(vector<vector<int>> qrcode, int x_start, int y_start, int x_end, int y_end, int value) {
     for (int i = x_start; i <= x_end; i++) {
-        qrcode[y_start][i] = 1;
-        qrcode[y_end][i] = 1;
+        qrcode[y_start][i] = value;
+        qrcode[y_end][i] = value;
     }
 
     for (int i = y_start; i <= y_end; i++) {
-        qrcode[i][x_start] = 1;
-        qrcode[i][x_end] = 1;
+        qrcode[i][x_start] = value;
+        qrcode[i][x_end] = value;
     }
 
     return qrcode;
 }
 
 vector<vector<int>> QrCoder::fillSearchPatterns(vector<vector<int>> qrcode) {
-    qrcode = this->drawRect(qrcode, 0, 0, 6, 6);
-    qrcode = this->drawRect(qrcode, 2, 2, 4, 4);
-    qrcode = this->drawRect(qrcode, 3, 3, 3, 3);
+    // left top
+    qrcode = this->drawRect(qrcode, 0, 0, 6, 6, 1);
+    qrcode = this->drawRect(qrcode, 2, 2, 4, 4, 1);
+    qrcode = this->drawRect(qrcode, 3, 3, 3, 3, 1);
+    qrcode = this->drawRect(qrcode, 1, 1, 5, 5, 0);
+    qrcode = this->drawRect(qrcode, 0, 7, 7, 7, 0);
+    qrcode = this->drawRect(qrcode, 7, 0, 7, 7, 0);
 
-    qrcode = this->drawRect(qrcode, 0, qrcode.size() - 7, 6, qrcode.size() - 1);
-    qrcode = this->drawRect(qrcode, 2, qrcode.size() - 5, 4, qrcode.size() - 3);
-    qrcode = this->drawRect(qrcode, 3, qrcode.size() - 4, 3, 3);
+    // left bottom
+    qrcode = this->drawRect(qrcode, 0, qrcode.size() - 7, 6, qrcode.size() - 1, 1);
+    qrcode = this->drawRect(qrcode, 2, qrcode.size() - 5, 4, qrcode.size() - 3, 1);
+    qrcode = this->drawRect(qrcode, 3, qrcode.size() - 4, 3, 3, 1);
+    qrcode = this->drawRect(qrcode, 1, qrcode.size() - 6, 5, qrcode.size() - 2, 0);
+    qrcode = this->drawRect(qrcode, 0, qrcode.size() - 8, 7, qrcode.size() - 8, 0);
+    qrcode = this->drawRect(qrcode, 7, qrcode.size() - 8, 7, qrcode.size() - 1, 0);
 
-
-    qrcode = this->drawRect(qrcode, qrcode.size() - 7, 0, qrcode.size() - 1, 6);
-    qrcode = this->drawRect(qrcode, qrcode.size() - 5, 2, qrcode.size() - 3, 4);
-    qrcode = this->drawRect(qrcode, qrcode.size() - 4, 3, 3, 3);
-
+    // right top
+    qrcode = this->drawRect(qrcode, qrcode.size() - 7, 0, qrcode.size() - 1, 6, 1);
+    qrcode = this->drawRect(qrcode, qrcode.size() - 5, 2, qrcode.size() - 3, 4, 1);
+    qrcode = this->drawRect(qrcode, qrcode.size() - 4, 3, 3, 3, 1);
+    qrcode = this->drawRect(qrcode, qrcode.size() - 6, 1, qrcode.size() - 2, 5, 0);
+    qrcode = this->drawRect(qrcode, qrcode.size() - 8, 0, qrcode.size() - 8, 7, 0);
+    qrcode = this->drawRect(qrcode, qrcode.size() - 8, 7, qrcode.size() - 1, 7, 0);
 
     return qrcode;
 }
