@@ -1,34 +1,34 @@
 #include <cstdio>
 #include <tchar.h>
-#include <Windows.h>
-#include <iostream>
+#include <windows.h>
+#include <commctrl.h>
+
 #include "QrCoder.h"
+#include "Controller/Edit/EditControl.h"
+#include "Controller/Qr/QrControl.h"
 
+#define MAX_SYMBOLS 1024
 
-QrCoder qrCoder("https://cdnimg.rg.ru/img/content/193/95/65/1_(9)_d_850.jpg");
-vector<vector<unsigned int>> qrcode;
+SizeParams wndSize = {500, 700, 0, 0};
 
-int width = 0;
-int height = 0;
+// controls:
+EditControl edit;
+WNDPROC lpEditWndProc;
+TCHAR textData[MAX_SYMBOLS];
 
-void drawQrCode(HWND hWnd, vector<vector<unsigned int>> qrcode) {
-    uint moduleWidth = width / qrcode[0].size();
-    uint moduleHeight = height / qrcode.size();
-    HBRUSH hBrush = CreateSolidBrush(RGB(0, 0, 0));
+QrControl qrControl;
+
+void drawText(HWND hWnd, string text, int x, int y, int textWidth, int textHeigh) {
     PAINTSTRUCT ps;
+    RECT rect;
     HDC hdc = BeginPaint(hWnd, &ps);
-    SelectObject(hdc, hBrush);
-    for (int i = 0; i < qrcode.size(); i++) {
-        for (int j = 0; j < qrcode[0].size(); j++) {
-            if (qrcode[i][j] == 1) {
-                Rectangle(hdc, j * moduleWidth, i * moduleHeight, (j + 1) * moduleWidth, (i + 1) * moduleHeight);
-            }
-        }
-    }
+    SetRect(&rect, x - textWidth, y, x + textWidth, y + textHeigh);
+    DrawText(hdc, text.c_str(), text.length(), &rect, DT_CENTER);
     EndPaint(hWnd, &ps);
 }
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK EditProc(HWND, UINT, WPARAM, LPARAM);
 
 TCHAR WinName[] = _T("MainFrame");
 
@@ -57,8 +57,8 @@ int WinMain(HINSTANCE This, HINSTANCE Prev, LPTSTR cmd, int mode) {
             WS_OVERLAPPEDWINDOW,
             CW_USEDEFAULT,
             CW_USEDEFAULT,
-            700,
-            700,
+            wndSize.width,
+            wndSize.height,
             HWND_DESKTOP,
             NULL,
             This,
@@ -75,19 +75,32 @@ int WinMain(HINSTANCE This, HINSTANCE Prev, LPTSTR cmd, int mode) {
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-
+    static HWND hEdit;
+    static HWND hQr;
     switch(message) {
         case WM_CREATE:
-            qrcode = qrCoder.generate();
+            hEdit = edit.create(hWnd);
+            lpEditWndProc = (WNDPROC) SetWindowLongPtr(hEdit, GWL_WNDPROC, (LONG_PTR)&EditProc);
+            hQr = qrControl.create(hWnd);
+            //qrControl.generate("this is test qr code generator");
             break;
 
         case WM_PAINT:
-            drawQrCode(hWnd, qrcode);
+            drawText(hWnd, "QR Code Generator", wndSize.width / 2, 10, 200, 50);
+            qrControl.drawQrCode();
             break;
 
         case WM_SIZE:
-            width = LOWORD(lParam);
-            height = HIWORD(lParam);
+            wndSize.width = LOWORD(lParam);
+            wndSize.height = HIWORD(lParam);
+            edit.setSize({wndSize.width / 2, wndSize.height / 5, wndSize.width / 2 - wndSize.width / 4, 50});
+            qrControl.setSize({wndSize.width - wndSize.width / 5, wndSize.height - edit.getSize().height - 120, wndSize.width / 2 - (wndSize.width - wndSize.width / 5) / 2, edit.getSize().y + edit.getSize().height + 10});
+            break;
+
+        case EM_GETMODIFY:
+            GetWindowText(hEdit, textData, MAX_SYMBOLS);
+            qrControl.generate(textData);
+            InvalidateRect(hWnd, NULL, TRUE);
             break;
 
         case WM_DESTROY:
@@ -95,6 +108,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             return 0;
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+    return 0;
+}
+
+LRESULT CALLBACK EditProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    switch(message) {
+        case WM_KEYDOWN:
+            PostMessage(GetParent(hWnd), EM_GETMODIFY, wParam, lParam);
+            break;
+
+        default:
+            return CallWindowProc(lpEditWndProc, hWnd, message, wParam, lParam);
     }
     return 0;
 }

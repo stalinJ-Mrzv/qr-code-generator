@@ -6,6 +6,13 @@
 using namespace std;
 
 namespace Types {
+    struct SizeParams {
+        int width;
+        int height;
+        int x;
+        int y;
+    };
+
     using uint = unsigned int;
     using uchar = unsigned char;
     using matrixInt = vector<vector<int>>;
