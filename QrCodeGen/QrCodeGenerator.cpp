@@ -1,13 +1,14 @@
 #include <cstdio>
 #include <tchar.h>
 #include <windows.h>
-#include <commctrl.h>
 
 #include "QrCoder.h"
 #include "Controller/Edit/EditControl.h"
 #include "Controller/Qr/QrControl.h"
+#include "Controller/Button/ButtonControl.h"
+#include "Controller/RadioButton/RadioButtonControl.h"
 
-#define MAX_SYMBOLS 1024
+#define MAX_SYMBOLS 2956
 
 SizeParams wndSize = {500, 700, 0, 0};
 
@@ -18,17 +19,33 @@ TCHAR textData[MAX_SYMBOLS];
 
 QrControl qrControl;
 
-void drawText(HWND hWnd, string text, int x, int y, int textWidth, int textHeigh) {
+ButtonControl btn;
+WNDPROC lpBtnWndProc;
+
+RadioButtonControl rbL, rbM, rbQ, rbH;
+vector<string> rbNames = {"L(7%)", "M(15%)", "Q(25%)", "H(30%)"};
+arrayInt rbIds = {100, 101, 102, 103};
+
+vector<RadioButtonControl> rbControls = {rbL, rbM, rbQ, rbH};
+
+void drawHeaders(HWND hWnd) {
     PAINTSTRUCT ps;
     RECT rect;
     HDC hdc = BeginPaint(hWnd, &ps);
-    SetRect(&rect, x - textWidth, y, x + textWidth, y + textHeigh);
-    DrawText(hdc, text.c_str(), text.length(), &rect, DT_CENTER);
+
+    string str1 = "QR Code Generator";
+    string str2 = "Correction level:";
+    SetRect(&rect, wndSize.width / 2 - 100, 10, wndSize.width / 2 + 100, 10 + 20);
+    DrawTextA(hdc, str1.c_str(), str1.length(), &rect, DT_CENTER);
+    SetRect(&rect, wndSize.width / 2 - 100, qrControl.getSize().y + qrControl.getSize().height + 10, wndSize.width / 2 + 100, qrControl.getSize().y + qrControl.getSize().height + 10 + 20);
+    DrawTextA(hdc, str2.c_str(), str2.length(), &rect, DT_CENTER);
     EndPaint(hWnd, &ps);
+
 }
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK EditProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK BtnGenProc(HWND, UINT, WPARAM, LPARAM);
 
 TCHAR WinName[] = _T("MainFrame");
 
@@ -77,30 +94,67 @@ int WinMain(HINSTANCE This, HINSTANCE Prev, LPTSTR cmd, int mode) {
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     static HWND hEdit;
     static HWND hQr;
+    static HWND hBtn;
+    static HWND hRBL;
+    static HWND hRBM;
+    static HWND hRBQ;
+    static HWND hRBH;
+    static vector<HWND> hRB = {hRBL, hRBM, hRBQ, hRBH};
     switch(message) {
         case WM_CREATE:
             hEdit = edit.create(hWnd);
             lpEditWndProc = (WNDPROC) SetWindowLongPtr(hEdit, GWL_WNDPROC, (LONG_PTR)&EditProc);
             hQr = qrControl.create(hWnd);
-            //qrControl.generate("this is test qr code generator");
+            hBtn = btn.create(hWnd);
+            lpBtnWndProc = (WNDPROC) SetWindowLong(hBtn, GWL_WNDPROC, (LONG_PTR)&BtnGenProc);
+            for (int i = 0; i < hRB.size(); i++) {
+                hRB[i] = rbControls[i].create(hWnd, rbNames[i], rbIds[i]);
+            }
+            CheckRadioButton(hWnd, rbIds[0], rbIds[rbIds.size() - 1], rbIds[0]);
             break;
 
         case WM_PAINT:
-            drawText(hWnd, "QR Code Generator", wndSize.width / 2, 10, 200, 50);
+            drawHeaders(hWnd);
             qrControl.drawQrCode();
             break;
 
         case WM_SIZE:
             wndSize.width = LOWORD(lParam);
             wndSize.height = HIWORD(lParam);
-            edit.setSize({wndSize.width / 2, wndSize.height / 5, wndSize.width / 2 - wndSize.width / 4, 50});
-            qrControl.setSize({wndSize.width - wndSize.width / 5, wndSize.height - edit.getSize().height - 120, wndSize.width / 2 - (wndSize.width - wndSize.width / 5) / 2, edit.getSize().y + edit.getSize().height + 10});
+            edit.setSize({wndSize.width / 2, wndSize.height / 5, wndSize.width / 2 - wndSize.width / 4, 40});
+            qrControl.setSize({wndSize.width - wndSize.width / 5, wndSize.height - edit.getSize().height - 180, wndSize.width / 2 - (wndSize.width - wndSize.width / 5) / 2, edit.getSize().y + edit.getSize().height + 10});
+            for (int i = 0; i < hRB.size(); i++) {
+                rbControls[i].setSize({70, 30, wndSize.width / 2 - 75 * i + 75, qrControl.getSize().y + qrControl.getSize().height + 20 + 10});
+            }
+            btn.setSize({120, 30, wndSize.width / 2 - 60, rbControls[0].getSize().y + rbControls[0].getSize().height + 10});
+            break;
+
+        case BM_CLICK:
+            GetWindowText(hEdit, textData, MAX_SYMBOLS);
+            qrControl.generate(textData);
+            InvalidateRect(hWnd, NULL, TRUE);
             break;
 
         case EM_GETMODIFY:
             GetWindowText(hEdit, textData, MAX_SYMBOLS);
             qrControl.generate(textData);
             InvalidateRect(hWnd, NULL, TRUE);
+            break;
+
+        case WM_COMMAND:
+            switch (LOWORD(wParam)) {
+                case 100:
+                case 101:
+                case 102:
+                case 103:
+                    qrControl.setCorrectionLevel(LOWORD(wParam) - 100);
+                    GetWindowText(hEdit, textData, MAX_SYMBOLS);
+                    qrControl.generate(textData);
+                    InvalidateRect(hWnd, NULL, TRUE);
+                    break;
+                default:
+                    break;
+            }
             break;
 
         case WM_DESTROY:
@@ -120,6 +174,18 @@ LRESULT CALLBACK EditProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         default:
             return CallWindowProc(lpEditWndProc, hWnd, message, wParam, lParam);
+    }
+    return 0;
+}
+
+LRESULT CALLBACK BtnGenProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    switch(message) {
+        case WM_LBUTTONDOWN:
+            PostMessage(GetParent(hWnd), BM_CLICK, wParam, lParam);
+            break;
+
+        default:
+            return CallWindowProc(lpBtnWndProc, hWnd, message, wParam, lParam);
     }
     return 0;
 }

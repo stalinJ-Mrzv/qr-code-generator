@@ -1,7 +1,7 @@
 #ifndef QRCODEGEN_QRCONTROL_H
 #define QRCODEGEN_QRCONTROL_H
 
-#include <windows.h>
+#include <Windows.h>
 #include <tchar.h>
 
 #include "../../Types.h"
@@ -16,10 +16,11 @@ public:
 
     matrixUInt generate(string sourceText);
     void drawQrCode();
+    void setCorrectionLevel(int correctionLevel);
 
 private:
     QrCoder qrCoder;
-    matrixUInt qrcode = {{}};
+    matrixUInt qrcode = {{0}};
 };
 
 

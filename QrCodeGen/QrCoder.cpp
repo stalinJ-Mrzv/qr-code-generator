@@ -1,9 +1,12 @@
 #include "QrCoder.h"
 
-QrCoder::QrCoder() {}
+QrCoder::QrCoder() {
+    this->correctionLevel = ErrorCorrection::correctionLevels::L;
+}
 
 QrCoder::QrCoder(string sourceText) {
     this->sourceText = sourceText;
+    this->correctionLevel = ErrorCorrection::correctionLevels::L;
 }
 
 matrixUInt QrCoder::generate() {
@@ -58,4 +61,10 @@ void QrCoder::setCodeType(int codeType) {
 
 int QrCoder::getCodeType() {
     return this->codeType;
+}
+
+bool QrCoder::isTooLong(uint len) {
+    arrayUInt versionSizes = this->consts.versionSizesByVersionAndCorrectionLevel[this->correctionLevel];
+    uint maxSize = versionSizes[versionSizes.size() - 1] / 8;
+    return len > maxSize;
 }

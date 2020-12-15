@@ -33,13 +33,15 @@ public:
     void setCodeType(int codeType);
     int getCodeType();
 
+    bool isTooLong(uint len);
+
 private:
     string sourceText;
 
     ConstantsForQr consts;
 
     ErrorCorrection errorCorrection;
-    int correctionLevel = ErrorCorrection::correctionLevels::L;
+    int correctionLevel;
 
     Encoder encoder;
     int codeType = Encoder::codeTypes::B;

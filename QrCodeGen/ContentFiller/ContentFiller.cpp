@@ -250,7 +250,5 @@ matrixUInt ContentFiller::addIndent(matrixUInt qrcode) {
             qrCodeWithIndent[i][j] = qrcode[i - 4][j - 4];
         }
     }
-
-    cout << qrCodeWithIndent.size() << endl;
     return qrCodeWithIndent;
 }

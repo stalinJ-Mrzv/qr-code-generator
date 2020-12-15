@@ -39,6 +39,13 @@ void QrControl::drawQrCode() {
 
 matrixUInt QrControl::generate(string sourceText) {
     this->qrCoder.setSourceText(sourceText);
-    this->qrcode = this->qrCoder.generate();
+    if (!this->qrCoder.isTooLong(sourceText.length())) {
+        this->qrcode = this->qrCoder.generate();
+    }
     return this->qrcode;
 }
+
+void QrControl::setCorrectionLevel(int correctionLevel) {
+    this->qrCoder.setCorrectionLevel(correctionLevel);
+}
+
